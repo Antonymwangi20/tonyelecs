@@ -9,7 +9,6 @@
     "preview": "vite preview",
     "server": "node server/index.js",
     "start": "node server/index.js",
-    "postbuild": "npm run build",
     "dev:all": "concurrently \"npm run dev\" \"npm run server\""
   },
   "dependencies": {
@@ -28,6 +27,7 @@
     "@types/node": "^22.14.0",
     "@vitejs/plugin-react": "^5.0.0",
     "concurrently": "^8.2.2",
+    "rollup-plugin-visualizer": "^6.0.5",
     "typescript": "~5.8.2",
     "vite": "^6.2.0"
   }
