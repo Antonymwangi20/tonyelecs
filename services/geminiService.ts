@@ -2,10 +2,25 @@
 import { GoogleGenAI } from "@google/genai";
 import { PRODUCTS } from "../constants";
 
-// Fix: Initialize GoogleGenAI strictly following the guideline using process.env.API_KEY directly.
-const ai = new GoogleGenAI({apiKey: process.env.API_KEY});
+// Initialize GoogleGenAI - handle missing API key in production
+const apiKey = process.env.API_KEY;
+let ai: any = null;
+
+if (!apiKey) {
+  console.warn('⚠️  Gemini API Key not configured. Chat assistant will be disabled.');
+} else {
+  try {
+    ai = new GoogleGenAI({ apiKey });
+  } catch (error) {
+    console.error('Failed to initialize Gemini:', error);
+  }
+}
 
 export const getShoppingAdvice = async (userPrompt: string, history: {role: string, content: string}[]) => {
+  if (!ai) {
+    return "Chat assistant is not available. Please configure VITE_GEMINI_API_KEY to enable this feature.";
+  }
+
   try {
     const productsContext = PRODUCTS.map(p => 
       `${p.name} (${p.category}): $${p.price}. ${p.description}`
