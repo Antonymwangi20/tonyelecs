@@ -1,0 +1,37 @@
+# fly.toml - Fly.io configuration
+
+app = "voltvibe-backend"
+
+# Signal and timeout for graceful shutdown
+kill_signal = "SIGINT"
+kill_timeout = 5
+
+[build]
+  # Fly will use the Dockerfile in the root by default when building from source
+  # If you prefer to use a pre-built image, set `image = "your-image:tag"` here.
+  # image = ""
+
+[env]
+  # Default internal port (override in Fly dashboard as needed)
+  PORT = "3001"
+
+[[services]]
+  internal_port = 3001
+  protocol = "tcp"
+
+  [[services.ports]]
+    handlers = ["http"]
+    port = 80
+
+  [[services.ports]]
+    handlers = ["tls", "http"]
+    port = 443
+
+  # Health check - optional but recommended
+  [[services.http_checks]]
+    interval = "15s"
+    timeout = "2s"
+    method = "get"
+    path = "/"
+    grace_period = "1s"
+    restart_limit = 6
