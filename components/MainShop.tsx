@@ -255,7 +255,8 @@ const MainShop: React.FC<MainShopProps> = ({ products, onProductsChange }) => {
         onProfileClick={() => setIsProfileOpen(true)}
         onLogout={handleLogout}
         onSupportClick={() => navigate('/support')}
-        onAdminClick={() => navigate('/admin')}
+        // Do NOT expose admin navigation in the customer-facing UI
+        onAdminClick={undefined}
         cartCount={cartItems.reduce((a, b) => a + b.quantity, 0)}
         wishlistCount={wishlistItems.length}
         searchQuery={searchQuery}

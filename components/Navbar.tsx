@@ -291,9 +291,9 @@ const Navbar: React.FC<NavbarProps> = ({
                     MY PROFILE
                   </button>
 
-                  {user && (user.role === 'manager' || user.role === 'super-admin') && (
+                  {user && (user.role === 'manager' || user.role === 'super-admin') && onAdminClick && (
                     <button
-                      onClick={() => { onAdminClick?.(); setShowProfileMenu(false); }}
+                      onClick={() => { onAdminClick(); setShowProfileMenu(false); }}
                       className="w-full flex items-center gap-3 px-5 py-3 text-xs font-black text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-xl transition-all"
                     >
                       <Command className="w-4 h-4 text-green-600" />
@@ -301,13 +301,15 @@ const Navbar: React.FC<NavbarProps> = ({
                     </button>
                   )}
 
-                  <button 
-                    onClick={() => { onSupportClick?.(); setShowProfileMenu(false); }}
-                    className="w-full flex items-center gap-3 px-5 py-3 text-xs font-black text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-xl transition-all"
-                  >
-                    <ShieldCheck className="w-4 h-4 text-green-600" />
-                    SUPPORT
-                  </button>
+                  {onSupportClick && (
+                    <button 
+                      onClick={() => { onSupportClick(); setShowProfileMenu(false); }}
+                      className="w-full flex items-center gap-3 px-5 py-3 text-xs font-black text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-xl transition-all"
+                    >
+                      <ShieldCheck className="w-4 h-4 text-green-600" />
+                      SUPPORT
+                    </button>
+                  )}
                   
                   <div className="h-px bg-gray-100 dark:bg-gray-800 my-1 mx-2" />
                   

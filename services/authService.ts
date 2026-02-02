@@ -100,7 +100,9 @@ export const getCurrentUser = async (): Promise<AuthUser | null> => {
       email: data.user.email || '',
       name: data.user.user_metadata?.name,
       avatar: data.user.user_metadata?.avatar,
-      role: data.user.user_metadata?.role || 'customer',
+      // IMPORTANT: Customer-facing auth should always be treated as "customer".
+      // Admin/manager access is handled by separate admin login under /admin.
+      role: 'customer',
       createdAt: data.user.created_at
     };
   } catch (error: any) {
@@ -118,7 +120,9 @@ export const onAuthStateChange = (callback: (user: AuthUser | null) => void) => 
         email: session.user.email || '',
         name: session.user.user_metadata?.name,
         avatar: session.user.user_metadata?.avatar,
-        role: session.user.user_metadata?.role || 'customer',
+        // IMPORTANT: Customer-facing auth should always be treated as "customer".
+        // Admin/manager access is handled by separate admin login under /admin.
+        role: 'customer',
         createdAt: session.user.created_at
       };
       callback(user);

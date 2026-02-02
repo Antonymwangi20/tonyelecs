@@ -1,8 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
 import { Product, Order } from '../types';
 import { Package, Users, ShoppingCart, TrendingUp, Plus, Edit2, Trash2, Eye, LogOut, BarChart3, User as UserIcon } from 'lucide-react';
+import { useAdminAuth } from '../contexts/AdminAuthContext';
 
 interface AdminDashboardProps {
   products: Product[];
@@ -12,7 +12,7 @@ interface AdminDashboardProps {
 }
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ products, onEditProduct, onDeleteProduct, onAddProduct }) => {
-  const { user, logout } = useAuth();
+  const { admin, logout } = useAdminAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'users'>('overview');
 
@@ -28,8 +28,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ products, onEditProduct
   }, [products]);
 
   const handleLogout = async () => {
-    await logout();
-    navigate('/');
+    logout();
+    navigate('/admin/login');
   };
 
   return (
@@ -41,13 +41,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ products, onEditProduct
             <div>
               <h1 className="text-3xl font-black text-gray-900 dark:text-white">Admin Dashboard</h1>
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                {user?.role === 'super-admin' ? 'Super Admin - Full Access' : 'Manager - Limited Access'}
+                {admin?.role === 'super-admin' ? 'Super Admin - Full Access' : 'Manager - Limited Access'}
               </p>
             </div>
             <div className="flex items-center gap-4">
               <div className="hidden sm:flex items-center gap-3 bg-gray-50 dark:bg-gray-800 px-4 py-2 rounded-2xl">
                 <UserIcon className="w-4 h-4 text-gray-500" />
-                <span className="text-sm font-bold text-gray-700 dark:text-gray-300">{user?.name}</span>
+                <span className="text-sm font-bold text-gray-700 dark:text-gray-300">{admin?.name}</span>
               </div>
               <button
                 onClick={handleLogout}

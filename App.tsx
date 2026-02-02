@@ -2,6 +2,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
+import { AdminAuthProvider } from './contexts/AdminAuthContext';
 import Navbar from './components/Navbar';
 import ProductCard from './components/ProductCard';
 import CartDrawer from './components/CartDrawer';
@@ -11,6 +12,8 @@ import FilterBar from './components/FilterBar';
 import AdminProductModal from './components/AdminProductModal';
 import AdminDashboard from './components/AdminDashboard';
 import ProtectedRoute from './components/ProtectedRoute';
+import AdminProtectedRoute from './components/AdminProtectedRoute';
+import AdminLogin from './components/AdminLogin';
 import AuthModal from './components/AuthModal';
 import ProductDetailsModal from './components/ProductDetailsModal';
 import UserProfileModal from './components/UserProfileModal';
@@ -66,17 +69,18 @@ const AppRoutes: React.FC = () => {
       <Routes>
         <Route path="/" element={<MainShop products={products} onProductsChange={setProducts} />} />
         <Route path="/support" element={<Support />} />
+        <Route path="/admin/login" element={<AdminLogin />} />
         <Route 
           path="/admin" 
           element={
-            <ProtectedRoute requiredRole={['manager', 'super-admin']}>
+            <AdminProtectedRoute requiredRole={['manager', 'super-admin']}>
               <AdminDashboard 
                 products={products}
                 onEditProduct={handleEditProduct}
                 onDeleteProduct={handleDeleteProduct}
                 onAddProduct={handleAddProduct}
               />
-            </ProtectedRoute>
+            </AdminProtectedRoute>
           } 
         />
       </Routes>
@@ -94,7 +98,9 @@ const App: React.FC = () => {
   return (
     <Router>
       <AuthProvider>
-        <AppRoutes />
+        <AdminAuthProvider>
+          <AppRoutes />
+        </AdminAuthProvider>
       </AuthProvider>
     </Router>
   );

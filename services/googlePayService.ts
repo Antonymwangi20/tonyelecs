@@ -363,13 +363,24 @@ export async function processGooglePayOnBackend(
   try {
     const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || 'http://localhost:3001';
     
+    // Extract Stripe PaymentMethod ID from Google Pay response
+    const paymentMethodId = paymentData?.payment_method?.id || paymentData?.paymentMethodId;
+    
+    if (!paymentMethodId) {
+      return {
+        success: false,
+        error: 'Invalid payment data',
+        message: 'No payment method ID found. Please try again or use another payment method.'
+      };
+    }
+    
     const response = await fetch(`${API_BASE_URL}/api/payments/google-pay`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        paymentData,
+        paymentMethodId,
         amount,
         currency: 'USD'
       }),
@@ -381,21 +392,21 @@ export async function processGooglePayOnBackend(
       return {
         success: false,
         error: data.error || 'Payment processing failed',
-        message: data.message || 'Failed to process payment on server'
+        message: data.message || 'Failed to process payment on server. Please try again or use another payment method.'
       };
     }
 
     return {
       success: true,
-      transactionId: data.transactionId,
-      paymentMethod: data.paymentMethod
+      transactionId: data.paymentIntentId,
+      paymentMethod: data.status
     };
   } catch (error: any) {
     console.error('Backend payment error:', error);
     return {
       success: false,
       error: 'Network error',
-      message: 'Unable to connect to payment server. Please check your internet connection.'
+      message: 'Unable to connect to payment server at ' + ((import.meta as any).env?.VITE_API_BASE_URL || 'http://localhost:3001')
     };
   }
 }

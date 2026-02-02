@@ -4,6 +4,12 @@ import axios from 'axios';
 import dotenv from 'dotenv';
 import path from 'path';
 
+import Stripe from "stripe";
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+  apiVersion: "2023-10-16"
+});
+
 dotenv.config();
 
 const app = express();
@@ -379,61 +385,69 @@ app.post('/api/mpesa/callback', (req, res) => {
 });
 
 // Google Pay payment processing endpoint
-app.post('/api/payments/google-pay', async (req, res) => {
+app.post("/api/payments/google-pay", async (req, res) => {
   try {
-    const { paymentData, amount, currency } = req.body;
+    const { paymentMethodId, amount, currency } = req.body;
 
-    // Validate inputs
-    if (!paymentData || !amount) {
+    if (!paymentMethodId || !amount) {
       return res.status(400).json({
-        error: 'Payment data and amount are required'
+        error: "paymentMethodId and amount are required"
       });
     }
 
-    console.log('💳 Processing Google Pay payment:', {
-      amount,
-      currency: currency || 'USD',
-      hasPaymentData: !!paymentData
+    if (!process.env.STRIPE_SECRET_KEY) {
+      console.error("❌ STRIPE_SECRET_KEY not configured");
+      return res.status(500).json({
+        error: "Stripe configuration missing",
+        message: "Backend is not configured for payments. Please set STRIPE_SECRET_KEY environment variable."
+      });
+    }
+
+    // Create a real Stripe PaymentIntent
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: Math.round(amount * 100), // convert to cents
+      currency: (currency || "USD").toLowerCase(),
+      payment_method: paymentMethodId,
+      confirmation_method: "automatic",
+      confirm: true,
+      description: `Google Pay payment - ${amount} ${currency || 'USD'}`
     });
 
-    // In a real implementation, you would:
-    // 1. Validate the payment token with Google Pay API
-    // 2. Process the payment through your payment gateway (Stripe, PayPal, etc.)
-    // 3. Store the transaction in your database
-    // 4. Send confirmation email
-
-    // For now, we'll simulate successful processing
-    // In production, integrate with your actual payment processor
-    
-    // Example: If using Stripe
-    // const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-    // const paymentIntent = await stripe.paymentIntents.create({
-    //   amount: Math.round(amount * 100), // Convert to cents
-    //   currency: currency.toLowerCase(),
-    //   payment_method_data: paymentData
-    // });
-
-    // Generate a transaction ID
-    const transactionId = `GP-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-
-    console.log('✅ Google Pay payment processed:', transactionId);
+    console.log(`✅ Stripe Payment Intent created: ${paymentIntent.id} (status: ${paymentIntent.status})`);
 
     res.json({
       success: true,
-      transactionId,
-      amount,
-      currency: currency || 'USD',
-      message: 'Payment processed successfully'
+      paymentIntentId: paymentIntent.id,
+      status: paymentIntent.status,
+      message: `Payment ${paymentIntent.status}. Transaction ID: ${paymentIntent.id}`
     });
 
-  } catch (error) {
-    console.error('❌ Google Pay processing error:', error);
-    res.status(500).json({
-      error: 'Payment processing failed',
-      message: error.message || 'An error occurred while processing your payment'
+  } catch (err) {
+    console.error("❌ Stripe Google Pay error:", err.message);
+
+    // Provide helpful error messages based on Stripe error code
+    let userMessage = "Payment failed. Please try again or use another payment method.";
+    let statusCode = 400;
+    
+    if (err.code === 'card_declined') {
+      userMessage = "Card declined. Please check your card details and try again.";
+    } else if (err.code === 'resource_missing') {
+      userMessage = "Invalid payment method. Please try again.";
+    } else if (err.code === 'rate_limit') {
+      userMessage = "Too many requests. Please wait a moment and try again.";
+      statusCode = 429;
+    } else if (err.statusCode) {
+      statusCode = err.statusCode;
+    }
+
+    res.status(statusCode).json({
+      error: "Google Pay payment failed",
+      message: userMessage,
+      code: err.code
     });
   }
 });
+
 
 // Serve static client build in production
 if (process.env.NODE_ENV === 'production') {
