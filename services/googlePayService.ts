@@ -118,8 +118,10 @@ export async function initiateGooglePayPayment(
     // Get environment variables
     const environment = (import.meta as any).env?.VITE_GOOGLE_PAY_ENVIRONMENT || 'TEST';
     const merchantId = (import.meta as any).env?.VITE_GOOGLE_PAY_MERCHANT_ID || 'BCR2DN6TZ6P6ZYX2';
-    const gateway = (import.meta as any).env?.VITE_GOOGLE_PAY_GATEWAY || 'stripe';
-    const gatewayMerchantId = (import.meta as any).env?.VITE_GOOGLE_PAY_GATEWAY_MERCHANT_ID || '';
+    // For Paystack, always use 'paystack' as the gateway
+    const gateway = 'paystack';
+    // For Paystack, we don't need a gateway merchant ID - Paystack handles it server-side
+    const gatewayMerchantId = '';
 
     // Validate production configuration
     if (environment === 'PRODUCTION') {
@@ -130,40 +132,16 @@ export async function initiateGooglePayPayment(
           message: 'Production mode requires a valid VITE_GOOGLE_PAY_MERCHANT_ID. Please set your production merchant ID in .env file.'
         };
       }
+    }
 
-      if (!gatewayMerchantId) {
-        return {
-          success: false,
-          error: 'Missing gateway merchant ID',
-          message: 'Production mode requires VITE_GOOGLE_PAY_GATEWAY_MERCHANT_ID. This is your payment gateway (Stripe, PayPal, etc.) merchant ID. Please configure it in your .env file.'
-        };
+    // Tokenization spec for Paystack
+    // Google Pay will return a token that we forward to Paystack
+    const tokenizationSpec = {
+      type: 'PAYMENT_GATEWAY',
+      parameters: {
+        gateway: 'paystack'
       }
-    }
-
-    // Determine tokenization method
-    // For production, use PAYMENT_GATEWAY (requires gateway merchant ID)
-    // For test, can use either
-    let tokenizationSpec;
-    
-    if (environment === 'PRODUCTION') {
-      // Production requires PAYMENT_GATEWAY with valid gateway merchant ID
-      tokenizationSpec = {
-        type: 'PAYMENT_GATEWAY',
-        parameters: {
-          gateway: gateway,
-          gatewayMerchantId: gatewayMerchantId
-        }
-      };
-    } else {
-      // Test mode - use PAYMENT_GATEWAY with example values
-      tokenizationSpec = {
-        type: 'PAYMENT_GATEWAY',
-        parameters: {
-          gateway: gateway || 'example',
-          gatewayMerchantId: gatewayMerchantId || 'exampleGatewayMerchantId'
-        }
-      };
-    }
+    };
 
     // Google Pay payment method
     const paymentMethodData: PaymentMethodData[] = [
@@ -363,16 +341,23 @@ export async function processGooglePayOnBackend(
   try {
     const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || 'http://localhost:3001';
     
-    // Extract Stripe PaymentMethod ID from Google Pay response
-    const paymentMethodId = paymentData?.payment_method?.id || paymentData?.paymentMethodId;
+    // Extract payment token from Google Pay response
+    // Google Pay returns the token in tokenizationData.token
+    const paymentToken = paymentData?.tokenizationData?.token;
     
-    if (!paymentMethodId) {
+    if (!paymentToken) {
+      console.error('No token in response:', paymentData);
       return {
         success: false,
-        error: 'Invalid payment data',
-        message: 'No payment method ID found. Please try again or use another payment method.'
+        error: 'Invalid payment token',
+        message: 'No payment token found in Google Pay response. Please try again.'
       };
     }
+
+    // Get user email (for demo, use a default - in production, get from user context)
+    const email = (window as any).__userEmail || 'customer@example.com';
+    
+    console.log(`📤 Sending Google Pay token to Paystack endpoint: ${API_BASE_URL}/api/payments/google-pay`);
     
     const response = await fetch(`${API_BASE_URL}/api/payments/google-pay`, {
       method: 'POST',
@@ -380,15 +365,16 @@ export async function processGooglePayOnBackend(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        paymentMethodId,
-        amount,
-        currency: 'USD'
+        paymentToken,  // Google Pay token
+        email,         // Customer email
+        amount         // Amount in currency units
       }),
     });
 
     const data = await response.json();
 
     if (!response.ok) {
+      console.error('Paystack error response:', data);
       return {
         success: false,
         error: data.error || 'Payment processing failed',
@@ -396,9 +382,10 @@ export async function processGooglePayOnBackend(
       };
     }
 
+    console.log(`✅ Paystack payment successful:`, data);
     return {
       success: true,
-      transactionId: data.paymentIntentId,
+      transactionId: data.reference,
       paymentMethod: data.status
     };
   } catch (error: any) {

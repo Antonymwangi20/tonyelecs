@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { X, Plus, Trash2, Save } from 'lucide-react';
+import { X, Plus, Trash2, Save, Upload } from 'lucide-react';
 import { Product } from '../types';
 
 interface AdminProductModalProps {
@@ -22,6 +22,53 @@ const AdminProductModal: React.FC<AdminProductModalProps> = ({ isOpen, onClose, 
 
   const [specKey, setSpecKey] = useState('');
   const [specValue, setSpecValue] = useState('');
+  const [dragActive, setDragActive] = useState(false);
+
+  const handleImageDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+
+    const files = e.dataTransfer.files;
+    if (files && files[0]) {
+      const file = files[0];
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const base64 = event.target?.result as string;
+          setFormData({ ...formData, image: base64 });
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files[0]) {
+      const file = files[0];
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const base64 = event.target?.result as string;
+          setFormData({ ...formData, image: base64 });
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+  };
 
   useEffect(() => {
     if (editingProduct) {
@@ -122,14 +169,48 @@ const AdminProductModal: React.FC<AdminProductModalProps> = ({ isOpen, onClose, 
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700 dark:text-gray-300">Image URL</label>
-              <input
-                required
-                className="w-full bg-gray-50 dark:bg-gray-800 border dark:border-gray-700 rounded-xl px-4 py-2.5 dark:text-white"
-                placeholder="https://images.unsplash.com/..."
-                value={formData.image}
-                onChange={e => setFormData({ ...formData, image: e.target.value })}
-              />
+              <label className="text-sm font-bold text-gray-700 dark:text-gray-300">Product Image</label>
+              <div
+                onDrop={handleImageDrop}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                className={`relative w-full border-2 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer ${
+                  dragActive
+                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                    : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/50 hover:border-blue-400 dark:hover:border-blue-500'
+                }`}
+              >
+                <input
+                  required
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                />
+                <div className="flex flex-col items-center justify-center gap-3">
+                  <Upload className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+                  <div>
+                    <p className="text-sm font-bold text-gray-900 dark:text-white">Drag & drop image here</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">or click to select file</p>
+                  </div>
+                </div>
+              </div>
+              {formData.image && (
+                <div className="relative w-full h-40 rounded-xl overflow-hidden border dark:border-gray-700">
+                  <img
+                    src={formData.image}
+                    alt="Preview"
+                    className="w-full h-full object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, image: '' })}
+                    className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-lg hover:bg-red-600 transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 

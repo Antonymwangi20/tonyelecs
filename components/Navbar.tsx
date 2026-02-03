@@ -100,8 +100,8 @@ const Navbar: React.FC<NavbarProps> = ({
           
           {/* Left: Logo Section */}
           <div className="flex items-center gap-2 cursor-pointer group justify-start">
-            <div className="p-2 bg-blue-600 rounded-xl group-hover:rotate-12 transition-transform duration-300">
-              <Zap className="w-5 h-5 text-white" />
+            <div className="group-hover:scale-110 transition-transform duration-300">
+              <img src="/tE.svg" alt="VoltVibe Logo" className="w-7 h-7" />
             </div>
             <div className="flex flex-col">
               <span className="text-xl font-black tracking-tighter text-gray-900 dark:text-white leading-none">Volt<span className="text-blue-600">Vibe</span></span>

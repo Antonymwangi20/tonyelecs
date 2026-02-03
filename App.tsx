@@ -19,6 +19,8 @@ import ProductDetailsModal from './components/ProductDetailsModal';
 import UserProfileModal from './components/UserProfileModal';
 import PaymentModal from './components/PaymentModal';
 import Support from './components/Support';
+import ShippingPolicy from './components/ShippingPolicy';
+import PrivacyPolicy from './components/PrivacyPolicy';
 import MainShop from './components/MainShop';
 import { PRODUCTS as DEFAULT_PRODUCTS, CATEGORIES } from './constants';
 import { Product, CartItem, SortOption, UserRole, User, Review, Order } from './types';
@@ -69,6 +71,8 @@ const AppRoutes: React.FC = () => {
       <Routes>
         <Route path="/" element={<MainShop products={products} onProductsChange={setProducts} />} />
         <Route path="/support" element={<Support />} />
+        <Route path="/shipping-policy" element={<ShippingPolicy />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route 
           path="/admin" 

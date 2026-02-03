@@ -4,12 +4,6 @@ import axios from 'axios';
 import dotenv from 'dotenv';
 import path from 'path';
 
-import Stripe from "stripe";
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2023-10-16"
-});
-
 dotenv.config();
 
 const app = express();
@@ -384,66 +378,75 @@ app.post('/api/mpesa/callback', (req, res) => {
   }
 });
 
-// Google Pay payment processing endpoint
+// Google Pay payment processing endpoint (Paystack integration)
 app.post("/api/payments/google-pay", async (req, res) => {
   try {
-    const { paymentMethodId, amount, currency } = req.body;
+    const { paymentToken, email, amount } = req.body;
 
-    if (!paymentMethodId || !amount) {
+    if (!paymentToken || !email || !amount) {
       return res.status(400).json({
-        error: "paymentMethodId and amount are required"
+        error: "paymentToken, email and amount are required"
       });
     }
 
-    if (!process.env.STRIPE_SECRET_KEY) {
-      console.error("❌ STRIPE_SECRET_KEY not configured");
+    if (!process.env.PAYSTACK_SECRET_KEY) {
+      console.error("❌ PAYSTACK_SECRET_KEY not configured");
       return res.status(500).json({
-        error: "Stripe configuration missing",
-        message: "Backend is not configured for payments. Please set STRIPE_SECRET_KEY environment variable."
+        error: "Paystack configuration missing",
+        message: "Backend is not configured for payments. Please set PAYSTACK_SECRET_KEY environment variable."
       });
     }
 
-    // Create a real Stripe PaymentIntent
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(amount * 100), // convert to cents
-      currency: (currency || "USD").toLowerCase(),
-      payment_method: paymentMethodId,
-      confirmation_method: "automatic",
-      confirm: true,
-      description: `Google Pay payment - ${amount} ${currency || 'USD'}`
-    });
+    // Paystack expects amount in kobo (1 kobo = 0.01 currency unit)
+    const amountInKobo = Math.round(amount * 100);
 
-    console.log(`✅ Stripe Payment Intent created: ${paymentIntent.id} (status: ${paymentIntent.status})`);
+    console.log(`💳 Processing Google Pay payment via Paystack: ${amountInKobo} kobo for ${email}`);
+
+    // Charge the card using Paystack Charge API
+    const response = await axios.post(
+      "https://api.paystack.co/charge",
+      {
+        email,
+        amount: amountInKobo,
+        authorization_code: paymentToken,
+        metadata: {
+          source: "google_pay",
+          timestamp: new Date().toISOString()
+        }
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+          "Content-Type": "application/json"
+        }
+      }
+    );
+
+    const data = response.data;
+
+    if (!data.status) {
+      console.error("❌ Paystack charge failed:", data.message);
+      return res.status(400).json({
+        error: "Paystack charge failed",
+        message: data.message || "Payment processing failed"
+      });
+    }
+
+    console.log(`✅ Paystack payment successful: ${data.data.reference} (status: ${data.data.status})`);
 
     res.json({
       success: true,
-      paymentIntentId: paymentIntent.id,
-      status: paymentIntent.status,
-      message: `Payment ${paymentIntent.status}. Transaction ID: ${paymentIntent.id}`
+      reference: data.data.reference,
+      status: data.data.status,
+      message: "Google Pay payment successful via Paystack"
     });
 
-  } catch (err) {
-    console.error("❌ Stripe Google Pay error:", err.message);
+  } catch (error) {
+    console.error("❌ Paystack Google Pay error:", error.response?.data || error.message);
 
-    // Provide helpful error messages based on Stripe error code
-    let userMessage = "Payment failed. Please try again or use another payment method.";
-    let statusCode = 400;
-    
-    if (err.code === 'card_declined') {
-      userMessage = "Card declined. Please check your card details and try again.";
-    } else if (err.code === 'resource_missing') {
-      userMessage = "Invalid payment method. Please try again.";
-    } else if (err.code === 'rate_limit') {
-      userMessage = "Too many requests. Please wait a moment and try again.";
-      statusCode = 429;
-    } else if (err.statusCode) {
-      statusCode = err.statusCode;
-    }
-
-    res.status(statusCode).json({
-      error: "Google Pay payment failed",
-      message: userMessage,
-      code: err.code
+    res.status(500).json({
+      error: "Payment failed",
+      message: error.response?.data?.message || "Paystack processing error"
     });
   }
 });

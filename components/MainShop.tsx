@@ -13,7 +13,7 @@ import UserProfileModal from './UserProfileModal';
 import PaymentModal from './PaymentModal';
 import { PRODUCTS as DEFAULT_PRODUCTS, CATEGORIES } from '../constants';
 import { Product, CartItem, SortOption, UserRole, User, Review, Order } from '../types';
-import { Package, Truck, ShieldCheck, Headphones, Plus, LogIn, Zap, User as UserIcon } from 'lucide-react';
+import { Package, Truck, ShieldCheck, Headphones, Plus, LogIn, Zap, User as UserIcon, EqualApproximatelyIcon, MailIcon, GithubIcon } from 'lucide-react';
 
 interface MainShopProps {
   products: Product[];
@@ -303,7 +303,7 @@ const MainShop: React.FC<MainShopProps> = ({ products, onProductsChange }) => {
                   className={`px-8 py-2.5 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${
                     activeCategory === cat 
                       ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 shadow-xl' 
-                      : 'text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white'
+                      : 'text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-blue-600/10'
                   }`}
                 >
                   {cat}
@@ -336,7 +336,7 @@ const MainShop: React.FC<MainShopProps> = ({ products, onProductsChange }) => {
           </div>
 
           {filteredProducts.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-10">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
               {filteredProducts.map(product => (
                 <ProductCard 
                   key={product.id} 
@@ -369,32 +369,34 @@ const MainShop: React.FC<MainShopProps> = ({ products, onProductsChange }) => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
             <div className="col-span-1 md:col-span-2">
               <div className="flex items-center gap-2 mb-6">
-                <div className="p-1 bg-blue-600 rounded-lg">
-                  <Package className="w-5 h-5 text-white" />
-                </div>
+                <img src="/tE.svg" alt="VoltVibe Logo" className="w-8 h-8" />
                 <span className="text-xl font-bold tracking-tight text-white">Volt<span className="text-blue-500">Vibe</span></span>
               </div>
               <p className="max-w-md leading-relaxed mb-6">
                 Building the bridge between technology and daily life. VoltVibe is your destination for handpicked electronics that push the boundaries of what's possible.
               </p>
               <div className="flex gap-4">
+                <div className="w-10 h-10 bg-white/5 rounded-full flex items-center justify-center hover:bg-blue-600 transition-colors">
+                  <span className="sr-only">Email</span>
+                  <MailIcon className="w-5 h-5 text-white/50 bg-blue-600/10" />
+                </div>
                 <a href="#" className="w-10 h-10 bg-white/5 rounded-full flex items-center justify-center hover:bg-blue-600 transition-colors">
-                  <span className="sr-only">Facebook</span>
+                  <span className="sr-only">Instagram</span>
                   <div className="w-5 h-5 bg-white/50 rounded-sm"></div>
                 </a>
-                <a href="#" className="w-10 h-10 bg-white/5 rounded-full flex items-center justify-center hover:bg-blue-600 transition-colors">
-                  <span className="sr-only">Twitter</span>
-                  <div className="w-5 h-5 bg-white/50 rounded-sm"></div>
+                <a href="https://github.com/Antonymwangi20" className="w-10 h-10 bg-white/5 rounded-full flex items-center justify-center hover:bg-blue-600 transition-colors">
+                  <span className="sr-only">Github</span>
+                  <GithubIcon className="w-5 h-5 text-white/50 bg-blue-600/10" />
                 </a>
               </div>
             </div>
             <div>
               <h5 className="text-white font-bold mb-6">Quick Links</h5>
               <ul className="space-y-4 text-sm">
-                <li><a href="#" onClick={(e) => { e.preventDefault(); navigate('/support'); }} className="hover:text-blue-500 transition-colors cursor-pointer">Support Center</a></li>
-                <li><a href="#" className="hover:text-blue-500 transition-colors">Shipping Policy</a></li>
-                <li><a href="#" className="hover:text-blue-500 transition-colors">Track My Order</a></li>
-                <li><a href="#" className="hover:text-blue-500 transition-colors">Privacy Policy</a></li>
+                <li><a href="/support" onClick={(e) => { e.preventDefault(); navigate('/support'); }} className="hover:text-blue-500 transition-colors cursor-pointer">Support Center</a></li>
+                <li><a href="/shipping-policy" className="hover:text-blue-500 transition-colors">Shipping Policy</a></li>
+                <li><a href="/track-order" className="hover:text-blue-500 transition-colors">Track My Order</a></li>
+                <li><a href="/privacy-policy" className="hover:text-blue-500 transition-colors">Privacy Policy</a></li>
               </ul>
             </div>
             <div>
